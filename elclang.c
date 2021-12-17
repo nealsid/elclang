@@ -22,38 +22,58 @@ void emacs_message(emacs_env *env, const char* logMessage) {
   env->funcall(env, env->intern (env, "message"), 1, m_args);
 }
 
-emacs_value initializeBuildTree (emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
+void copy_string_from_args(emacs_env *env, emacs_value *args, ptrdiff_t arg_number, char** argument) {
   ptrdiff_t string_length;
-  bool ret = env->copy_string_contents(env, args[0], NULL, &string_length);
+  *argument = NULL;
+
+  bool ret = env->copy_string_contents(env, args[arg_number], NULL, &string_length);
+
   if (!ret) {
     emacs_message(env, "Could not determine argument length");
-    return NULL;
+    return;
   }
-  char* buildPath = (char *)malloc(string_length);
 
-  if (!buildPath) {
+  *argument = (char *)malloc(string_length);
+
+  if (!*argument) {
     emacs_message(env, "Could not allocate memory for argument buffer.");
-    return NULL;
+    return;
   }
 
-  ret = env->copy_string_contents(env, args[0], buildPath, &string_length);
+  ret = env->copy_string_contents(env, args[arg_number], *argument, &string_length);
 
   if (!ret) {
-    emacs_message(env, "Could not retrieve build path argument.");
-    free(buildPath);
-    return NULL;
+    emacs_message(env, "Could not retrieve string argument.");
+    free(*argument);
+  }
+  return;
+}
+
+emacs_value initializeBuildTree (emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
+  char* buildPath;
+
+  copy_string_from_args(env, args, 0, &buildPath);
+  if (!buildPath) {
+    emacs_message(env, "Could not retrieve build path argument");
+    return env->intern (env, "nil");
   }
 
   emacs_message(env, "Successfully retrieved argument");
   emacs_message(env, buildPath);
 
   CXCompilationDatabase_Error errorCode;
-  clang_CompilationDatabase_fromDirectory(buildPath, &errorCode);
+  CXCompilationDatabase db;
+  db = clang_CompilationDatabase_fromDirectory(buildPath, &errorCode);
   if (errorCode == CXCompilationDatabase_CanNotLoadDatabase) {
     emacs_message(env, "Could not load compilation database.");
   } else {
     emacs_message(env, "Loaded compilation database.");
   }
   free(buildPath);
-  return NULL;
+  clang_CompilationDatabase_dispose(db);
+  return env->intern (env, "nil");
 }
+
+/* emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) { */
+
+/* } */
