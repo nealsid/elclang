@@ -40,6 +40,7 @@ emacs_value initializeBuildTree (emacs_env *env, ptrdiff_t nargs, emacs_value *a
 
   if (!ret) {
     emacs_message(env, "Could not retrieve build path argument.");
+    free(buildPath);
     return NULL;
   }
 
