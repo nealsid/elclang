@@ -45,6 +45,7 @@ void copy_string_from_args(emacs_env *env, emacs_value *args, ptrdiff_t arg_numb
   if (!ret) {
     emacs_message(env, "Could not retrieve string argument.");
     free(*argument);
+    *argument = NULL;
   }
   return;
 }
