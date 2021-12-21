@@ -145,7 +145,7 @@ emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, voi
   CXTranslationUnit tu;
 
   enum CXErrorCode err =
-    clang_parseTranslationUnit2(index, visitedFilePath, compilerArgs, numberOfCompilerArgs,
+    clang_parseTranslationUnit2(index, NULL, compilerArgs, numberOfCompilerArgs,
                                 NULL, 0, 0, &tu);
 
   if (err != CXError_Success) {
