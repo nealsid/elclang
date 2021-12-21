@@ -1,11 +1,14 @@
 # elclang
-An Emacs dynamic module to interface with libclang.
+
+`elclang` is an Emacs dynamic module to interface with libclang.  It only builds on macOS 12 right now, because it references header files for building Emacs modules directly from the Emacs.app bundle.  It also requires LLVM installed by Homebrew (there will probably be forthcoming changes to support building against LLVM/libclang from a different directory in order to step into libclang), as well as Ninja.  However, because I am too lazy to upgrade Emacs on my laptop, I can say it has been tested on both Emacs 26 & Emacs 27.
 
 Compile with (only tested on macOS 12.1):
 
 ```
-$ clang -I $(brew --prefix llvm)/include -I/Applications/Emacs.app/Contents/Resources/include elclang.c -Xlinker -dylib \
-	-Xlinker -o -Xlinker elclang.dylib -Xlinker -lclang -Xlinker -L -Xlinker $(brew --prefix llvm)/lib
+$ git clone https://github.com/nealsid/elclang
+$ cd elclang && mkdir build && cd build
+$ cmake ../
+$ ninja elclang
 ```
 
 It doesn't do anything, but you can load it with:
@@ -14,4 +17,4 @@ It doesn't do anything, but you can load it with:
 $ /Applications/Emacs.app/Contents/MacOS/Emacs -nw -q -execute "(module-load \"elclang.dylib\")"
 ```
 
-Then, once inside Emacs, do something like `M-: (elclang-initialize-build-tree "some build tree with compile_commands.json")`.
+I suggest starting a new Emacs because there is no way to unload modules currently.  Once inside Emacs, you can do something like `M-: (elclang-initialize-build-tree "some build tree with compile_commands.json")`.
