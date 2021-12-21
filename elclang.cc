@@ -4,13 +4,16 @@
 
 #include <string>
 
+#include "emacs-module-utilities.h"
+
 CXCompilationDatabase compilationDatabase;
 
 using namespace std;
 
 void buildCompilationDatabase(const std::string& buildPath) {
   CXCompilationDatabase_Error errorCode;
-  compilationDatabase = clang_CompilationDatabase_fromDirectory(buildPath, &errorCode);
+  compilationDatabase = clang_CompilationDatabase_fromDirectory(buildPath.c_str(),
+								&errorCode);
   if (errorCode == CXCompilationDatabase_CanNotLoadDatabase) {
     emacs_message(env, "Could not load compilation database.");
   } else {

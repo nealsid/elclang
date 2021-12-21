@@ -2,6 +2,12 @@
    Emacs, as well as code to register them. */
 #include "emacs-module-utilities.h"
 
+#include <clang-c/CXCompilationDatabase.h>
+#include <clang-c/CXErrorCode.h>
+#include <clang-c/Index.h>
+
+#include <stdlib.h>
+
 emacs_value emacs_nil = env->intern(env, "nil");
 
 #define RETURN_NIL() return emacs_nil
