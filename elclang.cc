@@ -4,7 +4,9 @@
 
 #include <string>
 
+extern "C" {
 #include "emacs-module-utilities.h"
+}
 
 CXCompilationDatabase compilationDatabase;
 
