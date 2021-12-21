@@ -1,10 +1,13 @@
 #include "emacs-module-utilities.h"
-#include <emacs-module.h>
 
-#define RETURN_NIL() return emacs_nil;
+#include <emacs-module.h>
+#include <stdarg.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 emacs_value emacs_nil;
-emaccs_env *env;
+
+emacs_env *env;
 
 /* Sends a message to Emacs' *Messages* buffer */
 void emacs_message(emacs_env *env, const char* logMessageFormat, ... ) {

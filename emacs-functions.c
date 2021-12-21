@@ -5,14 +5,10 @@
 #include <clang-c/CXCompilationDatabase.h>
 #include <clang-c/CXErrorCode.h>
 #include <clang-c/Index.h>
-
 #include <stdlib.h>
 
-emacs_value emacs_nil = env->intern(env, "nil");
-
-#define RETURN_NIL() return emacs_nil
-
 typedef emacs_value (*emacs_callable)(emacs_env *, ptrdiff_t, emacs_value *, void *);
+CXCompilationDatabase compilationDatabase;
 
 emacs_value initializeBuildTree(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
