@@ -13,6 +13,9 @@ CXCompilationDatabase compilationDatabase;
 emacs_value initializeBuildTree(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 
+void buildCompilationDatabase(const char* buildPath);
+void parseVisitedFile(const char* fullyQualifiedPath);
+
 /* A struct to define functions we expose to elisp. */
 struct EmacsLispCallableFunction {
   const char *elisp_function_name; /* The elisp function name */
@@ -66,7 +69,7 @@ emacs_value initializeBuildTree(emacs_env *env, ptrdiff_t nargs, emacs_value *ar
 
   emacs_message(env, "Successfully retrieved argument");
   emacs_message(env, buildPath);
-
+  buildCompilationDatabase(buildPath);
   free(buildPath);
   RETURN_NIL();
 }
@@ -83,53 +86,8 @@ emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, voi
     RETURN_NIL();
   }
 
-  CXCompileCommands compileCommands =
-    clang_CompilationDatabase_getCompileCommands(compilationDatabase,
-                                                 visitedFilePath);
-
-  int numberOfCommands = clang_CompileCommands_getSize(compileCommands);
-
-  if (numberOfCommands > 1) {
-    emacs_message(env, "%s had %d compilation commands, using first one.", visitedFilePath, numberOfCommands);
-  } else if (numberOfCommands == 0) {
-    emacs_message(env, "%s had 0 compilation commands, no information available.", visitedFilePath);
-    free(visitedFilePath);
-    RETURN_NIL();
-  } else {
-    emacs_message(env, "Found compilation command for %s\n", visitedFilePath);
-  }
-
-  CXCompileCommand compileCommand = clang_CompileCommands_getCommand(compileCommands, 0);
-  CXIndex index = clang_createIndex(1, 1);
-
-  int numberOfCompilerArgs = clang_CompileCommand_getNumArgs(compileCommand);
-
-  CXString compilerArguments[numberOfCompilerArgs];
-  char const *compilerArgs[numberOfCompilerArgs];
-
-  for (int i = 0; i < numberOfCompilerArgs; ++i) {
-    compilerArguments[i] = clang_CompileCommand_getArg(compileCommand, i);
-    compilerArgs[i] = clang_getCString(compilerArguments[i]);
-    emacs_message(env, "Arg: %s", compilerArgs[i]);
-  }
-
-  CXTranslationUnit tu;
-
-  enum CXErrorCode err =
-    clang_parseTranslationUnit2(index, NULL, compilerArgs, numberOfCompilerArgs,
-                                NULL, 0, 0, &tu);
-
-  if (err != CXError_Success) {
-    emacs_message(env, "Error creating translation unit: %d", err);
-  } else {
-    emacs_message(env, "Successfully created translation unit.");
-  }
-
-  for (int i = 0; i < numberOfCompilerArgs; ++i) {
-    clang_disposeString(compilerArguments[i]);
-  }
+  parseVisitedFile(visitedFilePath);
 
   free(visitedFilePath);
-  clang_CompileCommands_dispose(compileCommands);
   RETURN_NIL();
 }
