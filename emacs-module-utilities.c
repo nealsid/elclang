@@ -7,8 +7,6 @@
 
 emacs_value emacs_nil;
 
-emacs_env *env;
-
 /* Sends a message to Emacs' *Messages* buffer */
 void emacs_message(emacs_env *env, const char* logMessageFormat, ... ) {
   va_list argp;

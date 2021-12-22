@@ -1,7 +1,6 @@
 #include <emacs-module.h>
 
 extern emacs_value emacs_nil;
-extern emacs_env *env;
 
 #define RETURN_NIL() return emacs_nil;
 

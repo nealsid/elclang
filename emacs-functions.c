@@ -13,8 +13,8 @@ CXCompilationDatabase compilationDatabase;
 emacs_value initializeBuildTree(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 
-void buildCompilationDatabase(const char* buildPath);
-void parseVisitedFile(const char* fullyQualifiedPath);
+void buildCompilationDatabase(emacs_env *env, const char* buildPath);
+void parseVisitedFile(emacs_env *env, const char* fullyQualifiedPath);
 
 /* A struct to define functions we expose to elisp. */
 struct EmacsLispCallableFunction {
@@ -38,7 +38,7 @@ struct EmacsLispCallableFunction emacsLispFunctions[] = {
   }
 };
 
-int register_elisp_functions() {
+int register_elisp_functions(emacs_env *env) {
   int number_of_elisp_callables = sizeof(emacsLispFunctions) / sizeof(emacsLispFunctions[0]);
   emacs_value defalias = env->intern(env, "defalias");
 
@@ -67,9 +67,9 @@ emacs_value initializeBuildTree(emacs_env *env, ptrdiff_t nargs, emacs_value *ar
     RETURN_NIL();
   }
 
-  emacs_message(env, "Successfully retrieved argument");
+  emacs_message(env, "Successfully retrieved build path argument");
   emacs_message(env, buildPath);
-  buildCompilationDatabase(buildPath);
+  buildCompilationDatabase(env, buildPath);
   free(buildPath);
   RETURN_NIL();
 }
@@ -86,7 +86,7 @@ emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, voi
     RETURN_NIL();
   }
 
-  parseVisitedFile(visitedFilePath);
+  parseVisitedFile(env, visitedFilePath);
 
   free(visitedFilePath);
   RETURN_NIL();

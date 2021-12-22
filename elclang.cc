@@ -1,6 +1,7 @@
 #include <clang-c/CXCompilationDatabase.h>
 #include <clang-c/CXErrorCode.h>
 #include <clang-c/Index.h>
+#include <emacs-module.h>
 
 #include <string>
 
@@ -13,7 +14,7 @@ CXCompilationDatabase compilationDatabase;
 using namespace std;
 
 extern "C" {
-  void buildCompilationDatabase(const char* buildPath) {
+  void buildCompilationDatabase(emacs_env* env, const char* buildPath) {
     CXCompilationDatabase_Error errorCode;
     compilationDatabase = clang_CompilationDatabase_fromDirectory(buildPath,
 								  &errorCode);
@@ -24,7 +25,7 @@ extern "C" {
     }
   }
 
-  void parseVisitedFile(const char* fullyQualifiedPath) {
+  void parseVisitedFile(emacs_env* env, const char* fullyQualifiedPath) {
     CXCompileCommands compileCommands =
       clang_CompilationDatabase_getCompileCommands(compilationDatabase,
 						   fullyQualifiedPath);
