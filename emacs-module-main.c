@@ -14,6 +14,5 @@ int register_elisp_functions();
 int emacs_module_init(struct emacs_runtime *runtime) {
   emacs_env* env = runtime->get_environment(runtime);
   register_elisp_functions(env);
-  emacs_nil = env->intern(env, "nil");
   return 0;
 }

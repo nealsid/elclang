@@ -3,15 +3,21 @@
 #include <clang-c/Index.h>
 #include <emacs-module.h>
 
+#include <map>
 #include <string>
 
 extern "C" {
 #include "emacs-module-utilities.h"
 }
 
-CXCompilationDatabase compilationDatabase;
-
 using namespace std;
+
+// Eventually we will need multiple CXCompilationDatabase, because
+// multiple files can be opened in Emacs from different projects, and
+// we'll need to lookup a compilation DB from a fully-qualified path
+// name via a map.
+CXCompilationDatabase compilationDatabase;
+map<std::string, CXTranslationUnit> translationUnitForFilename;
 
 extern "C" {
   void buildCompilationDatabase(emacs_env* env, const char* buildPath) {
@@ -66,6 +72,7 @@ extern "C" {
     } else {
       emacs_message(env, "Successfully created translation unit.");
     }
+    translationUnitForFilename[fullyQualifiedPath] = tu;
 
     for (int i = 0; i < numberOfCompilerArgs; ++i) {
       clang_disposeString(compilerArguments[i]);
@@ -73,4 +80,9 @@ extern "C" {
     clang_CompileCommands_dispose(compileCommands);
   }
 
+  void dumpASTForFile(emacs_env* env, const char* fullyQualifiedPath) {
+    CXTranslationUnit tu = translationUnitForFilename[fullyQualifiedPath];
+    CXCursor tuCursor = clang_getTranslationUnitCursor(tu);
+    emacs_message(env, "%s", clang_getCString(clang_getCursorKindSpelling(clang_getCursorKind(tuCursor))));
+  }
 }

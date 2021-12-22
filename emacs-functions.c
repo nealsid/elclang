@@ -12,9 +12,11 @@ CXCompilationDatabase compilationDatabase;
 
 emacs_value initializeBuildTree(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
+emacs_value dump_ast(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 
 void buildCompilationDatabase(emacs_env *env, const char* buildPath);
 void parseVisitedFile(emacs_env *env, const char* fullyQualifiedPath);
+void dumpASTForFile(emacs_env *env, const char* fullyQualifiedPath);
 
 /* A struct to define functions we expose to elisp. */
 struct EmacsLispCallableFunction {
@@ -35,6 +37,10 @@ struct EmacsLispCallableFunction emacsLispFunctions[] = {
   {
     "elclang-file-visited", visited_file, 1, 1,
     "Function to look up compilation information for a file.  Meant for use in after-load-functions hook.", NULL
+  },
+  {
+    "elclang-dump-ast", dump_ast, 1, 1,
+    "Function to dump AST for file.", NULL
   }
 };
 
@@ -68,7 +74,7 @@ emacs_value initializeBuildTree(emacs_env *env, ptrdiff_t nargs, emacs_value *ar
   }
 
   emacs_message(env, "Successfully retrieved build path argument");
-  emacs_message(env, buildPath);
+  emacs_message(env, "%s", buildPath);
   buildCompilationDatabase(env, buildPath);
   free(buildPath);
   RETURN_NIL();
@@ -89,5 +95,21 @@ emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, voi
   parseVisitedFile(env, visitedFilePath);
 
   free(visitedFilePath);
+  RETURN_NIL();
+}
+
+emacs_value dump_ast(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
+  char *fullyQualifiedFilename;
+
+  copy_string_from_args(env, args, 0, &fullyQualifiedFilename);
+
+  if (!fullyQualifiedFilename) {
+    emacs_message(env, "Could not retrieve filename from args");
+    RETURN_NIL();
+  }
+
+  dumpASTForFile(env, fullyQualifiedFilename);
+
+  free(fullyQualifiedFilename);
   RETURN_NIL();
 }
