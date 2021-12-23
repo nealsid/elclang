@@ -80,9 +80,18 @@ extern "C" {
     clang_CompileCommands_dispose(compileCommands);
   }
 
+  CXChildVisitResult traverseCursor(CXCursor cursor, CXCursor parent, CXClientData client_data);
+
   void dumpASTForFile(emacs_env* env, const char* fullyQualifiedPath) {
     CXTranslationUnit tu = translationUnitForFilename[fullyQualifiedPath];
     CXCursor tuCursor = clang_getTranslationUnitCursor(tu);
     emacs_message(env, "%s", clang_getCString(clang_getCursorKindSpelling(clang_getCursorKind(tuCursor))));
+    clang_visitChildren(tuCursor, traverseCursor, static_cast<emacs_env *>(env));
+  }
+
+  CXChildVisitResult traverseCursor(CXCursor cursor, CXCursor parent, CXClientData client_data) {
+    emacs_env* env = (emacs_env*)client_data;
+    emacs_message(env, "%s", clang_getCString(clang_getCursorKindSpelling(clang_getCursorKind(cursor))));
+    return CXChildVisit_Recurse;
   }
 }
