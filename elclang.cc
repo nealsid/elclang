@@ -91,7 +91,15 @@ extern "C" {
 
   CXChildVisitResult traverseCursor(CXCursor cursor, CXCursor parent, CXClientData client_data) {
     emacs_env* env = (emacs_env*)client_data;
-    emacs_message(env, "%s", clang_getCString(clang_getCursorKindSpelling(clang_getCursorKind(cursor))));
+    CXSourceRange sourceRange = clang_getCursorExtent(cursor);
+    CXSourceLocation cursorStart = clang_getRangeStart(sourceRange);
+    CXSourceLocation cursorEnd = clang_getRangeEnd(sourceRange);
+    unsigned int start_line, start_column, end_line, end_column;
+    clang_getExpansionLocation(cursorStart, nullptr, &start_line, &start_column, nullptr);
+    clang_getExpansionLocation(cursorEnd, nullptr, &end_line, &end_column, nullptr);
+
+    emacs_message(env, "%s L%d,C%d - L%d, C%d", clang_getCString(clang_getCursorKindSpelling(clang_getCursorKind(cursor))),
+                  start_line, start_column, end_line, end_column);
     return CXChildVisit_Recurse;
   }
 }

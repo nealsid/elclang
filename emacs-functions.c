@@ -13,6 +13,7 @@ CXCompilationDatabase compilationDatabase;
 emacs_value initializeBuildTree(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 emacs_value visited_file(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 emacs_value dump_ast(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
+emacs_value cursor_extent_for_point(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data);
 
 void buildCompilationDatabase(emacs_env *env, const char* buildPath);
 void parseVisitedFile(emacs_env *env, const char* fullyQualifiedPath);
@@ -41,6 +42,10 @@ struct EmacsLispCallableFunction emacsLispFunctions[] = {
   {
     "elclang-dump-ast", dump_ast, 1, 1,
     "Function to dump AST for file.", NULL
+  },
+  {
+    "elclang-cursor-extent-for-point", cursor_extent_for_point, 2, 2,
+    "Returns the cursor range for the cursor under the point.", NULL
   }
 };
 
@@ -111,5 +116,15 @@ emacs_value dump_ast(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *d
   dumpASTForFile(env, fullyQualifiedFilename);
 
   free(fullyQualifiedFilename);
+  RETURN_NIL();
+}
+
+emacs_value cursor_extent_for_point(emacs_env *env, ptrdiff_t nargs, emacs_value *args, void *data) {
+  unsigned int line, col;
+
+  line = env->extract_integer(env, args[0]);
+  col = env->extract_integer(env, args[1]);
+
+  emacs_message(env, "Line: %d, col: %d", line, col);
   RETURN_NIL();
 }
