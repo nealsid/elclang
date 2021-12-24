@@ -142,7 +142,8 @@ emacs_value cursor_extent_for_point(emacs_env *env, ptrdiff_t nargs, emacs_value
 
   unsigned int lineColValues[4];
   getClangCursorExtentForEmacsCursorPosition(line, col, fullyQualifiedFilename, lineColValues);
-
+  lineColValues[1]--;
+  lineColValues[3]--;
   emacs_message(env, "Start: L%d/C%d", lineColValues[0], lineColValues[1]);
   emacs_message(env, "End: L%d/C%d", lineColValues[2], lineColValues[3]);
   free(fullyQualifiedFilename);
