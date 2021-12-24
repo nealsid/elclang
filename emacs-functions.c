@@ -5,6 +5,7 @@
 #include <clang-c/CXCompilationDatabase.h>
 #include <clang-c/CXErrorCode.h>
 #include <clang-c/Index.h>
+#include <emacs-module.h>
 #include <stdlib.h>
 
 typedef emacs_value (*emacs_callable)(emacs_env *, ptrdiff_t, emacs_value *, void *);
@@ -46,7 +47,7 @@ struct EmacsLispCallableFunction emacsLispFunctions[] = {
     "Function to dump AST for file.", NULL
   },
   {
-    "elclang-cursor-extent-for-point", cursor_extent_for_point, 3, 3,
+    "elclang-cursor-extent-for-point", cursor_extent_for_point, 4, 4,
     "Returns the cursor range for the cursor under the point.", NULL
   }
 };
@@ -146,6 +147,12 @@ emacs_value cursor_extent_for_point(emacs_env *env, ptrdiff_t nargs, emacs_value
   lineColValues[3]--;
   emacs_message(env, "Start: L%d/C%d", lineColValues[0], lineColValues[1]);
   emacs_message(env, "End: L%d/C%d", lineColValues[2], lineColValues[3]);
+
+  emacs_value output_vector = args[3];
+  for (int i = 0; i < 4; ++i) {
+    env->vec_set(env, output_vector, i, env->make_integer(env, lineColValues[i]));
+  }
+
   free(fullyQualifiedFilename);
   RETURN_NIL();
 }

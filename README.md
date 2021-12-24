@@ -18,3 +18,8 @@ $ /Applications/Emacs.app/Contents/MacOS/Emacs -nw -q -execute "(module-load \"e
 ```
 
 I suggest starting a new Emacs because there is no way to unload modules currently (also, it really isn't useful right now).  Once inside Emacs, you can do something like `M-: (elclang-initialize-build-tree "some build tree with compile_commands.json")`.
+
+
+## Demo
+
+![Demo](ELClang UI Demo.gif)
