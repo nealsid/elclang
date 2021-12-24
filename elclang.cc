@@ -80,6 +80,18 @@ extern "C" {
     clang_CompileCommands_dispose(compileCommands);
   }
 
+  void convertCXSourceRangeToArray(const CXSourceRange& cxSourceRange, unsigned int values[4]);
+
+  void getClangCursorExtentForEmacsCursorPosition(unsigned int line, unsigned int column, const char* filename,
+                                                  unsigned int output[4]) {
+    CXTranslationUnit tu = translationUnitForFilename[filename];
+    CXFile clangFile = clang_getFile(tu, filename);
+    CXSourceLocation sourceLocation = clang_getLocation(tu, clangFile, line, column);
+    CXCursor locationCursor = clang_getCursor(tu, sourceLocation);
+    CXSourceRange cursorExtent = clang_getCursorExtent(locationCursor);
+    convertCXSourceRangeToArray(cursorExtent, output);
+  }
+
   CXChildVisitResult traverseCursor(CXCursor cursor, CXCursor parent, CXClientData client_data);
 
   void dumpASTForFile(emacs_env* env, const char* fullyQualifiedPath) {
@@ -92,14 +104,17 @@ extern "C" {
   CXChildVisitResult traverseCursor(CXCursor cursor, CXCursor parent, CXClientData client_data) {
     emacs_env* env = (emacs_env*)client_data;
     CXSourceRange sourceRange = clang_getCursorExtent(cursor);
-    CXSourceLocation cursorStart = clang_getRangeStart(sourceRange);
-    CXSourceLocation cursorEnd = clang_getRangeEnd(sourceRange);
-    unsigned int start_line, start_column, end_line, end_column;
-    clang_getExpansionLocation(cursorStart, nullptr, &start_line, &start_column, nullptr);
-    clang_getExpansionLocation(cursorEnd, nullptr, &end_line, &end_column, nullptr);
-
+    unsigned int lineColValues[4];
+    convertCXSourceRangeToArray(sourceRange, lineColValues);
     emacs_message(env, "%s L%d,C%d - L%d, C%d", clang_getCString(clang_getCursorKindSpelling(clang_getCursorKind(cursor))),
-                  start_line, start_column, end_line, end_column);
+                  lineColValues[0], lineColValues[1], lineColValues[2], lineColValues[3]);
     return CXChildVisit_Recurse;
+  }
+
+  void convertCXSourceRangeToArray(const CXSourceRange& cxSourceRange, unsigned int values[4]) {
+    CXSourceLocation cursorStart = clang_getRangeStart(cxSourceRange);
+    CXSourceLocation cursorEnd = clang_getRangeEnd(cxSourceRange);
+    clang_getExpansionLocation(cursorStart, nullptr, &values[0], &values[1], nullptr);
+    clang_getExpansionLocation(cursorEnd, nullptr, &values[2], &values[3], nullptr);
   }
 }
