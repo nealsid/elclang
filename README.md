@@ -22,4 +22,4 @@ I suggest starting a new Emacs because there is no way to unload modules current
 
 ## Demo
 
-![Demo](ELClang UI Demo.gif)
+![Demo](ELClang%20UI%20Demo.gif)
