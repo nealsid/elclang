@@ -10,17 +10,35 @@ emacs_value testFunc(emacs_env* env, ptrdiff_t, emacs_value*, void*) {
   return env->intern(env, "nil");
 }
 
-template<typename... Args>
-std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
-createFunctionWrapperForEmacs(emacs_env * env,
-                              std::function<emacs_value(Args...)> func) {
-  return createFunctionWrapperForEmacs(env, func, 0);
+emacs_value func1(emacs_env* env, const std::string& s, const std::string& s1) {
+  cout << "Func1" << endl;
+  return env->intern(env, "nil");
 }
 
 template<typename... Args>
 std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
-createFunctionWrapperForEmacs(emacs_env * env,
-                              std::function<emacs_value(emacs_env*, const std::string&, Args...)> func,
+createFunctionWrapperForEmacs(std::function<emacs_value(Args...)> func) {
+  return createFunctionWrapperForEmacs(func, 0);
+}
+
+template<typename... Args>
+std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
+createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, Args...)> func,
+                              int argNumber) {
+  cout << "Currying emacs_env" << endl;
+  auto l = [argNumber, func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void*) {
+	     if (env == nullptr) {
+	       cout << "Emacs_env was invalid" << endl;
+	       return;
+	     }
+	     std::function<emacs_value(Args...)> f = std::bind(func, env);
+	     auto l = createFunctionWrapperForEmacs(f, 1);
+	   };
+}
+
+template<typename... Args>
+std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
+createFunctionWrapperForEmacs(std::function<emacs_value(const std::string&, Args...)> func,
                               int argNumber) {
   cout << "hello, emacs 1st param string!" << endl;
   std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)> f = [argNumber, func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void*) {
@@ -42,7 +60,7 @@ createFunctionWrapperForEmacs(emacs_env * env,
       free(argument);
       abort();
     }
-    auto curried = std::bind(func, env, argument, _1);
+    std::function<emacs_value(Args...)> curried = std::bind(func, env, argument, _1);
     createFunctionWrapperForEmacs(env, curried, argNumber + 1);
   };
 
@@ -63,18 +81,7 @@ void register_emacs_function(emacs_env* env, Fn fn) {
   cout << "hello, register!" << endl;
 }
 
-emacs_value func1(emacs_env* env, const std::string& s, int a) {
-  cout << "Func1" << endl;
-  return env->intern(env, "nil");
-}
-
-emacs_value func2(emacs_env* env, int a, int b) {
-  cout << "Func2" << endl;
-  return env->intern(env, "nil");
-}
-
 int main(int argc, char* argv[]) {
-  createFunctionWrapperForEmacs(nullptr, std::function<emacs_value(emacs_env*, const std::string&, int)>(func1));
-  //  createFunctionWrapperForEmacs(nullptr, func2);
+  createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, const std::string&, const std::string&)>(func1));
   cout << "hello, world!" << endl;
 }
