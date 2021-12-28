@@ -82,7 +82,9 @@ extern "C" {
 
   void convertCXSourceRangeToArray(const CXSourceRange& cxSourceRange, unsigned int values[4]);
 
-  void getClangCursorExtentForEmacsCursorPosition(unsigned int line, unsigned int column, const char* filename,
+  CXChildVisitResult traverseCursor(CXCursor cursor, CXCursor parent, CXClientData client_data);
+
+  void getClangCursorExtentForEmacsCursorPosition(emacs_env *env, unsigned int line, unsigned int column, const char* filename,
                                                   unsigned int output[4]) {
     CXTranslationUnit tu = translationUnitForFilename[filename];
     CXFile clangFile = clang_getFile(tu, filename);
@@ -90,9 +92,8 @@ extern "C" {
     CXCursor locationCursor = clang_getCursor(tu, sourceLocation);
     CXSourceRange cursorExtent = clang_getCursorExtent(locationCursor);
     convertCXSourceRangeToArray(cursorExtent, output);
+    clang_visitChildren(locationCursor, traverseCursor, static_cast<emacs_env *>(env));
   }
-
-  CXChildVisitResult traverseCursor(CXCursor cursor, CXCursor parent, CXClientData client_data);
 
   void dumpASTForFile(emacs_env* env, const char* fullyQualifiedPath) {
     CXTranslationUnit tu = translationUnitForFilename[fullyQualifiedPath];

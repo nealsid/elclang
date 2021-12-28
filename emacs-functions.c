@@ -19,7 +19,7 @@ emacs_value cursor_extent_for_point(emacs_env *env, ptrdiff_t nargs, emacs_value
 void buildCompilationDatabase(emacs_env *env, const char* buildPath);
 void parseVisitedFile(emacs_env *env, const char* fullyQualifiedPath);
 void dumpASTForFile(emacs_env *env, const char* fullyQualifiedPath);
-void getClangCursorExtentForEmacsCursorPosition(unsigned int line, unsigned int column, const char* filename,
+void getClangCursorExtentForEmacsCursorPosition(emacs_env *env, unsigned int line, unsigned int column, const char* filename,
                                                 unsigned int output[4]);
 
 /* A struct to define functions we expose to elisp. */
@@ -142,7 +142,7 @@ emacs_value cursor_extent_for_point(emacs_env *env, ptrdiff_t nargs, emacs_value
   }
 
   unsigned int lineColValues[4];
-  getClangCursorExtentForEmacsCursorPosition(line, col, fullyQualifiedFilename, lineColValues);
+  getClangCursorExtentForEmacsCursorPosition(env, line, col, fullyQualifiedFilename, lineColValues);
   lineColValues[1]--;
   lineColValues[3]--;
   emacs_message(env, "Start: L%d/C%d", lineColValues[0], lineColValues[1]);
