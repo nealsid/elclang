@@ -25,21 +25,24 @@ emacs_value func1(emacs_env* env, const std::string& s) {
 
 template<typename... Args>
 std::function<emacs_function_type>
-createFunctionWrapperForEmacs(env_first_parameter_function_type<Args> func) {
-  return [] (emacs_env *env, ptrdiff_t nargs, emacs_value* args, void* data) -> emacs_value {
+createFunctionWrapperForEmacs(env_first_parameter_function_type<Args...> func) {
+  return [func] (emacs_env *env, ptrdiff_t nargs, emacs_value* args, void* data) -> emacs_value {
     if (env == nullptr) {
       cout << "Did not receive emacs_env from emacs" << endl;
     }
-  }(env, nargs, args, data);
+
+    std::function<emacs_value(Args...)> nextParamFunc = std::bind(func, env, _1);
+    return createFunctionWrapperForEmacs(nextParamFunc)(env, nargs, args, data);
+  };
 }
 
 template<typename... Args>
 std::function<emacs_function_type>
-createFunctionWrapperForEmacs(string_first_parameter_function_type<Args> func) {
-  return [] (emacs_env *env, ptrdiff_t nargs, emacs_value* args, void* data) -> emacs_value {
-    if (env == nullptr) {
-      cout << "Did not receive emacs_env from emacs" << endl;
-    }
+createFunctionWrapperForEmacs(string_first_parameter_function_type<Args...> func) {
+  return [func] (emacs_env *env, ptrdiff_t nargs, emacs_value* args, void* data) -> emacs_value {
+    cout << "hello, emacs 1st param string!" << endl;
+    auto nextParamFunc = std::bind(func, "hello");
+    return env->intern(env, "nil");
   };
 }
 
@@ -121,6 +124,6 @@ void register_emacs_function(emacs_env* env, Fn fn) {
 }
 
 int main(int argc, char* argv[]) {
-  createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, const std::string&, const std::string&)>(func1));
+  createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, const std::string&)>(func1))(nullptr, 2, nullptr, nullptr);
   cout << "hello, world!" << endl;
 }
