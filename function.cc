@@ -13,6 +13,30 @@ using string_first_parameter_function_type = std::function<emacs_value(const std
 
 using emacs_function_type = emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*);
 
+// Strategy here is heavily derived (as in, 1 iota more complicated than Command-C, Command-V) from:
+// https://stackoverflow.com/questions/21192659/variadic-templates-and-stdbind#21193316
+
+// We create a custom placeholder so we can generate a sequence of
+// them using integer_sequence.  Additionally, we need to specialize
+// is_placeholder for the new custom placeholder type so that
+// std::bind recognizers our placeholders (which it does by testing if
+// it's integral_constant<int, N> for N >= 1).
+template<int>
+struct generate_placeholders
+{};
+
+namespace std {
+    template<int N>
+    struct is_placeholder< generate_placeholders<N> >
+        : integral_constant<int, N> {};
+}
+
+template<int N, int... Is> struct make_int_sequence
+  : make_int_sequence<N-1, N, Is...> {};
+template<int... Is> struct make_int_sequence<0, Is...>
+  : integer_sequence<int, Is...> {};
+
+template<
 emacs_value testFunc(emacs_env* env, ptrdiff_t, emacs_value*, void*) {
   cout << "emacs testfunc" << endl;
   return env->intern(env, "nil");
@@ -52,6 +76,10 @@ createFunctionWrapperForEmacs(std::function<emacs_value(Args...)> func) {
   return createFunctionWrapperForEmacs(func, 0);
 }
 
+template<typename Callable>
+varargs_bind(Callable c, emacs_env* env, int num_placeholders) -> auto {
+  return std::bind(c, env, generate_placeholders<num_placeholders>{}...);
+}
 template<typename... Args>
 std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
 createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, Args...)> func,
