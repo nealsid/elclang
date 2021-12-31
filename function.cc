@@ -85,8 +85,8 @@ createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, Args... func
 	       cout << "Emacs_env was invalid" << endl;
 	       return;
 	     }
-	     std::function<emacs_value(Args...)> f = varargs_bind(func, env, funcArguments );
-	     auto l = createFunctionWrapperForEmacs(f, 1);
+	     std::function<emacs_value(Args...)> f = varargs_bind(func, env, sizeof...(Args));
+	     auto l = createFunctionWrapperForEmacs(f, argNumber + 1;
 	   };
 }
 
