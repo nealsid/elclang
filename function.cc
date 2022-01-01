@@ -79,20 +79,19 @@ template<typename... Args>
 std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
 createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, Args...)> func) {
   cout << "Currying emacs_env" << endl;
-  std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)> l([func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void*) {
+  std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)> l = [func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void* data) {
     if (env == nullptr) {
       cout << "Emacs_env was invalid" << endl;
     }
     std::function<emacs_value(Args...)> f = varargs_bind(func, env, make_int_sequence<sizeof...(Args)>{});
-    return createFunctionWrapperForEmacs(f);
-  });
+    return createFunctionWrapperForEmacs(f)(env, nargs, args, data);
+  };
   return l;
 }
 
 
 std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
-createFunctionWrapperForEmacs(std::function<emacs_value()> func,
-                              int argNumber) {
+createFunctionWrapperForEmacs(std::function<emacs_value()> func) {
   cout << "Final function generation" << endl;
   auto l = [func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void*) {
     return func();
