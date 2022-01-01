@@ -38,7 +38,12 @@ template<int... Sequence> struct make_int_sequence<0, Sequence...> // Now Sequen
 
 emacs_value func1(emacs_env* env, emacs_env* env1, emacs_env* env2, emacs_env* env3) {
   cout << "Func1" << endl;
-  return env->intern(env, "nil");
+  if (!env) {
+    cout << "emacs env is null" << endl;
+    return nullptr;
+  } else {
+    return env->intern(env, "nil");
+  }
 }
 
 // template<typename... Args>
