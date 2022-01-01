@@ -22,12 +22,12 @@ using emacs_function_type = emacs_value(emacs_env*, ptrdiff_t, emacs_value*, voi
 // std::bind recognizers our placeholders (which it does by testing if
 // it's integral_constant<int, N> for N >= 1).
 template<int>
-struct generate_placeholders
+struct bind_placeholder
 {};
 
 namespace std {
     template<int N>
-    struct is_placeholder< generate_placeholders<N> >
+    struct is_placeholder< bind_placeholder<N> >
         : integral_constant<int, N> {};
 }
 
@@ -36,70 +36,80 @@ template<int N, int... Sequence> struct make_int_sequence
 template<int... Sequence> struct make_int_sequence<0, Sequence...> // Now Sequence represents all integers from 1 to N
   : integer_sequence<int, Sequence...> {};
 
-emacs_value func1(emacs_env* env, const std::string& s) {
+emacs_value func1(emacs_env* env, emacs_env* env1, emacs_env* env2, emacs_env* env3) {
   cout << "Func1" << endl;
   return env->intern(env, "nil");
 }
 
-template<typename... Args>
-std::function<emacs_function_type>
-createFunctionWrapperForEmacs(env_first_parameter_function_type<Args...> func) {
-  return [func] (emacs_env *env, ptrdiff_t nargs, emacs_value* args, void* data) -> emacs_value {
-    if (env == nullptr) {
-      cout << "Did not receive emacs_env from emacs" << endl;
-    }
+// template<typename... Args>
+// std::function<emacs_function_type>
+// createFunctionWrapperForEmacs(env_first_parameter_function_type<Args...> func) {
+//   return [func] (emacs_env *env, ptrdiff_t nargs, emacs_value* args, void* data) -> emacs_value {
+//     if (env == nullptr) {
+//       cout << "Did not receive emacs_env from emacs" << endl;
+//     }
 
-    std::function<emacs_value(Args...)> nextParamFunc = std::bind(func, env, _1);
-    return createFunctionWrapperForEmacs(nextParamFunc)(env, nargs, args, data);
-  };
-}
+//     std::function<emacs_value(Args...)> nextParamFunc = std::bind(func, env, _1);
+//     return createFunctionWrapperForEmacs(nextParamFunc)(env, nargs, args, data);
+//   };
+// }
 
-template<typename... Args>
-std::function<emacs_function_type>
-createFunctionWrapperForEmacs(string_first_parameter_function_type<Args...> func) {
-  return [func] (emacs_env *env, ptrdiff_t nargs, emacs_value* args, void* data) -> emacs_value {
-    cout << "hello, emacs 1st param string!" << endl;
-    auto nextParamFunc = std::bind(func, "hello");
-    return env->intern(env, "nil");
-  };
+// template<typename... Args>
+// std::function<emacs_function_type>
+// createFunctionWrapperForEmacs(string_first_parameter_function_type<Args...> func) {
+//   return [func] (emacs_env *env, ptrdiff_t nargs, emacs_value* args, void* data) -> emacs_value {
+//     cout << "hello, emacs 1st param string!" << endl;
+//     auto nextParamFunc = std::bind(func, "hello");
+//     return env->intern(env, "nil");
+//   };
+// }
+
+// template<typename... Args>
+// std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
+// createFunctionWrapperForEmacs(std::function<emacs_value(Args...)> func) {
+//   return createFunctionWrapperForEmacs(func, 0);
+// }
+
+template<typename Callable, int... Is>
+auto varargs_bind(Callable c, emacs_env* env, integer_sequence<int, Is...>) {
+  return std::bind(c, env, bind_placeholder<Is>{}...);
 }
 
 template<typename... Args>
 std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
-createFunctionWrapperForEmacs(std::function<emacs_value(Args...)> func) {
-  return createFunctionWrapperForEmacs(func, 0);
-}
-
-template<typename Callable, typename... args>
-auto varargs_bind(Callable c, emacs_env* env, args... arguments) {
-  return std::bind(c, env, generate_placeholders<sizeof...(args)>{}...);
-}
-
-template<typename... Args>
-std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
-createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, Args... funcArguments)> func,
-                              int argNumber) {
+createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, Args...)> func) {
   cout << "Currying emacs_env" << endl;
-  auto l = [argNumber, func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void*) {
-	     if (env == nullptr) {
-	       cout << "Emacs_env was invalid" << endl;
-	       return;
-	     }
-	     std::function<emacs_value(Args...)> f = varargs_bind(func, env, sizeof...(Args));
-	     auto l = createFunctionWrapperForEmacs(f, argNumber + 1;
-	   };
-}
-
-template<typename... Args>
-std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
-createFunctionWrapperForEmacs(std::function<emacs_value(const std::string&)> func,
-                              int argNumber) {
-  cout << "Currying string" << endl;
-  auto l = [argNumber, func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void*) {
-
-	   };
+  std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)> l([func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void*) {
+    if (env == nullptr) {
+      cout << "Emacs_env was invalid" << endl;
+    }
+    std::function<emacs_value(Args...)> f = varargs_bind(func, env, make_int_sequence<sizeof...(Args)>{});
+    return createFunctionWrapperForEmacs(f);
+  });
   return l;
 }
+
+
+std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
+createFunctionWrapperForEmacs(std::function<emacs_value()> func,
+                              int argNumber) {
+  cout << "Final function generation" << endl;
+  auto l = [func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void*) {
+    return func();
+  };
+  return l;
+}
+
+// template<typename... Args>
+// std::function<emacs_value(emacs_env*, ptrdiff_t, emacs_value*, void*)>
+// createFunctionWrapperForEmacs(std::function<emacs_value(const std::string&)> func,
+//                               int argNumber) {
+//   cout << "Currying string" << endl;
+//   auto l = [argNumber, func] (emacs_env* env, ptrdiff_t nargs, emacs_value* args, void*) {
+
+// 	   };
+//   return l;
+// }
 
 template<typename Fn>
 void register_emacs_function(emacs_env* env, Fn fn) {
@@ -116,7 +126,7 @@ void print_sequence(std::integer_sequence<int, ints...> int_seq) {
 }
 
 int main(int argc, char* argv[]) {
-  //  createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, const std::string&)>(func1))(nullptr, 2, nullptr, nullptr);
+  createFunctionWrapperForEmacs(std::function<emacs_value(emacs_env*, emacs_env*, emacs_env*, emacs_env*)>(func1))(nullptr, 3, nullptr, nullptr);
   auto n = make_int_sequence<5>{};
   print_sequence(n);
   cout << "hello, world!" << endl;
