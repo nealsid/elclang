@@ -22,4 +22,6 @@ I suggest starting a new Emacs because there is no way to unload modules current
 
 ## Demo
 
+This simple demo sets up a timer in Emacs that fires every 100 milliseconds.  It queries libclang for the CXCursor that surrounds the point, and highlights it.  I used a timer, rather than querying on every keystroke, to minimize impact on user interaction, and I believe that Emacs does some special scheduling to ensure timer functions don't slow down interactive editing.
+
 ![Demo](ELClang%20UI%20Demo.gif)
